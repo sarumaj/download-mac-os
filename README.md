@@ -18,9 +18,8 @@ Download any macOS Release without needing a Mac! Download in DMG, ISO, or ZIP F
 
 - Click the `Use This Template` button above the commit status.
 - Click on `Create a new repository`.
-- Enter the Repository Name as `Download-macOS`.
+- Name ythe new repository.
 - Click on the `Create Repository` button.
-- Before running, modify [this line](https://github.com/Comp-Labs/Download-macOS/blob/a4e8e6849d7bd9563638d46e6db843e109e8156c/.github/workflows/generate-installer.yml#L36) to your repository link to prevent any errors.
 - Go to the **Actions** Tab.
 - Select `Generate macOS Installer`
 - Click on **Run workflow**. Select the desired options and click on **Run workflow**.
@@ -48,7 +47,3 @@ In case any of the links don't work, try going [here](https://support.apple.com/
 - Sometimes you may get an error saying `Update Not Found`. The workaround is nothing but to try again.
 - Sometimes you may get an error saying `hdiutil: couldn't eject "disk2" - Resource busy`. Workaround is nothing but to try again
 - Sometimes you may be trying to extract the Downloaded ZIP File but it will say 'Corrupted'. Workaround is to re-run the Job and it should work. No Possible Fixes are Available.
-
-## To-Do
-
-- Add Option for user to enter versions manually
