@@ -91,7 +91,7 @@ jobs:
           softwareupdate --fetch-full-installer --full-installer-version ${{ env.installer_version }}
 
       # Generate Installer
-      - if: github.event.inputs.file == 'dmg'
+      - if: github.event.inputs.file == 'DMG'
         name: Generate macOS DMG Installer
         run: |
           sudo hdiutil create -o /tmp/'${{ env.installer_name }}' -size 16659m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
@@ -101,7 +101,7 @@ jobs:
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
           sudo mv /tmp/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}'.dmg
 
-      - if: github.event.inputs.file == 'iso'
+      - if: github.event.inputs.file == 'ISO'
         name: Generate macOS ISO Installer
         run: |
           sudo hdiutil create -o /tmp/'${{ env.installer_name }}' -size 16659m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
@@ -115,7 +115,7 @@ jobs:
           mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}'.iso
           sudo rm -fv /tmp/'${{ env.installer_name }}'.dmg
 
-      - if: github.event.inputs.file == 'zip'
+      - if: github.event.inputs.file == 'ZIP'
         name: Generate macOS ZIP Installer
         run: |
           cd /Applications
@@ -127,12 +127,34 @@ jobs:
         if: steps.validate_version.outputs.version_exists == 'true'
         id: output_file_size
         run: |
-          FILE_PATH="~/Desktop/${{ env.installer_name }}.${{ github.event.inputs.file }}"
-
+          # Use $HOME instead of ~ for more reliable expansion
+          FILE_PATH="$HOME/Desktop/${{ env.installer_name }}.${{ github.event.inputs.file | downcase }}"
+      
+          echo "Checking file at: $FILE_PATH"
+      
+          # Check if file exists before trying to get its size
+          if [ ! -f "$FILE_PATH" ]; then
+            echo "⚠️ WARNING: File not found at $FILE_PATH"
+            echo "Listing Desktop contents for debugging:"
+            ls -la $HOME/Desktop/
+      
+            # Try case-insensitive search as a fallback
+            echo "Trying to find file with case-insensitive search:"
+            FOUND_FILE=$(find $HOME/Desktop -type f -iname "${{ env.installer_name }}.*" | head -n 1)
+      
+            if [ -n "$FOUND_FILE" ]; then
+              echo "Found file at: $FOUND_FILE"
+              FILE_PATH="$FOUND_FILE"
+            else
+              echo "file_size=Unknown (file not found)" >> $GITHUB_OUTPUT
+              exit 0  # Continue workflow despite error
+            fi
+          fi
+      
           # Get file size in bytes
           FILE_SIZE_BYTES=$(stat -f %z "$FILE_PATH")
-
-          # Convert to human-readable format using numfmt (more elegant solution)
+      
+          # Convert to human-readable format
           for unit in bytes KB MB GB TB; do
             if [ $FILE_SIZE_BYTES -lt 1024 ]; then
               FILE_SIZE_UNIT=$unit
@@ -141,17 +163,17 @@ jobs:
             FILE_SIZE_BYTES=$(echo "scale=2; $FILE_SIZE_BYTES / 1024" | bc)
           done
           FILE_SIZE_HR=$(printf "%.2f %s" $FILE_SIZE_BYTES $FILE_SIZE_UNIT)
-
-          echo "⚠️ You are about to upload a file of size: $FILE_SIZE_HR ($FILE_SIZE_BYTES bytes)"
-
+      
+          echo "⚠️ You are about to upload a file of size: $FILE_SIZE_HR"
           echo "file_size=$FILE_SIZE_HR" >> $GITHUB_OUTPUT
 
       # Upload Installer
       - name: Upload ${{ github.event.inputs.file }}
         uses: actions/upload-artifact@v4
         with:
-          name: macOS ${{ env.installer_name }}
-          path: "~/Desktop/${{ env.installer_name }}.${{ github.event.inputs.file }}"
+          name: macOS ${{ env.installer_name }} (${{ steps.output_file_size.outputs.file_size }})
+          path: "$HOME/Desktop/${{ env.installer_name }}.${{ github.event.inputs.file | downcase }}"
+
 
       # Add information about accessing the artifact
       - name: Artifact Information
