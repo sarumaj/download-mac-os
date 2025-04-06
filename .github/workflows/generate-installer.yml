@@ -24,6 +24,14 @@ on:
         description: "Custom macOS Version (format: Name vX.Y.Z, only used if 'Custom Version' is selected)"
         required: false
         default: ""
+      file:
+        type: choice
+        description: "File Type"
+        required: true
+        options:
+          - ISO
+          - DMG
+          - ZIP
 
 run-name: Generate macOS Installer - ${{ github.event.inputs.version_selection_method == 'Predefined Version' && github.event.inputs.predefined_macos_version || github.event.inputs.custom_macos_version }} ${{ github.event.inputs.file }}
 
