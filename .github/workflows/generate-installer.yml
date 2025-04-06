@@ -15,7 +15,7 @@ on:
         description: "Predefined macOS Version (only used if 'Predefined Version' is selected)"
         required: false
         options:
-          - Sequoia v15.3.1
+          - Sequoia v15.3.2
           - Sonoma v14.7.4
           - Ventura v13.7.4
           - Monterey v12.7.4
@@ -123,9 +123,44 @@ jobs:
           zip -r 'Install macOS ${{ env.installer_name }}.zip' 'Install macOS ${{ env.installer_name }}.app'
           mv -v 'Install macOS ${{ env.installer_name }}.zip' ~/Desktop/'${{ env.installer_name }}.zip'
 
+      # Output File Size Before Upload
+      - name: Output File Size
+        if: steps.validate_version.outputs.version_exists == 'true'
+        id: output_file_size
+        run: |
+          FILE_PATH="~/Desktop/${{ env.installer_name }}.${{ github.event.inputs.file }}"
+
+          # Get file size in bytes
+          FILE_SIZE_BYTES=$(stat -f %z "$FILE_PATH")
+
+          # Convert to human-readable format using numfmt (more elegant solution)
+          for unit in bytes KB MB GB TB; do
+            if [ $FILE_SIZE_BYTES -lt 1024 ]; then
+              FILE_SIZE_UNIT=$unit
+              break
+            fi
+            FILE_SIZE_BYTES=$(echo "scale=2; $FILE_SIZE_BYTES / 1024" | bc)
+          done
+          FILE_SIZE_HR=$(printf "%.2f %s" $FILE_SIZE_BYTES $FILE_SIZE_UNIT)
+
+          echo "⚠️ You are about to upload a file of size: $FILE_SIZE_HR ($FILE_SIZE_BYTES bytes)"
+
+          echo "file_size=$FILE_SIZE_HR" >> $GITHUB_OUTPUT
+
       # Upload Installer
       - name: Upload ${{ github.event.inputs.file }}
         uses: actions/upload-artifact@v4
         with:
           name: macOS ${{ env.installer_name }}
           path: "~/Desktop/${{ env.installer_name }}.${{ github.event.inputs.file }}"
+
+      # Add information about accessing the artifact
+      - name: Artifact Information
+        if: steps.validate_version.outputs.version_exists == 'true'
+        run: |
+          echo "✅ Build completed successfully!"
+          echo "📦 Your macOS installer artifact (${{ steps.output_file_size.outputs.file_size }}) will be available at:"
+          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo ""
+          echo "⏳ Artifacts are automatically deleted after 90 days."
+          echo "📥 Download your artifact soon to avoid losing it."
