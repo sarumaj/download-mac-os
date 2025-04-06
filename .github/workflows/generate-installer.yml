@@ -3,25 +3,29 @@ name: Generate macOS Installer
 on:
   workflow_dispatch:
     inputs:
-      macos_version:
+      version_selection_method:
         type: choice
-        description: "macOS Version"
+        description: "Version Selection Method"
         required: true
+        options:
+          - Predefined Version
+          - Custom Version
+      predefined_macos_version:
+        type: choice
+        description: "Predefined macOS Version (only used if 'Predefined Version' is selected)"
+        required: false
         options:
           - Sequoia v15.3.1
           - Sonoma v14.7.4
           - Ventura v13.7.4
           - Monterey v12.7.4
-      file:
-        type: choice
-        description: "File Type"
-        required: true
-        options:
-          - ISO
-          - DMG
-          - ZIP
+      custom_macos_version:
+        type: string
+        description: "Custom macOS Version (format: Name vX.Y.Z, only used if 'Custom Version' is selected)"
+        required: false
+        default: ""
 
-run-name: Generate macOS Installer - ${{ github.event.inputs.macos_version }} ${{ github.event.inputs.file }}
+run-name: Generate macOS Installer - ${{ github.event.inputs.version_selection_method == 'Predefined Version' && github.event.inputs.predefined_macos_version || github.event.inputs.custom_macos_version }} ${{ github.event.inputs.file }}
 
 env:
   installer_version: "" # Do not touch: Populated by extract-details (suppresses warnings)
@@ -33,12 +37,21 @@ jobs:
     if: github.repository == 'sarumaj/Download-macOS'
     steps:
       - uses: actions/checkout@v4
+
+      # Determine which macOS version to use
+      - name: Set macOS Version
+        run: |
+          if [[ "${{ github.event.inputs.version_selection_method }}" == "Predefined Version" ]]; then
+            echo "macos_version=${{ github.event.inputs.predefined_macos_version }}" >> $GITHUB_ENV
+          else
+            echo "macos_version=${{ github.event.inputs.custom_macos_version }}" >> $GITHUB_ENV
+          fi
       
       # Setup
       - name: Extract Version Details
         id: extract-details
         run: |
-          string="${{ github.event.inputs.macos_version }}"
+          string="${{ env.macos_version }}"
           echo "installer_version=${string//*v/}" >> $GITHUB_ENV
           echo "installer_name=${string// v*/}" >> $GITHUB_ENV
 
