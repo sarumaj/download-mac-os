@@ -1,3 +1,7 @@
+[![Generate macOS Installer](https://github.com/sarumaj/download-mac-os/actions/workflows/generate-installer.yml/badge.svg)](https://github.com/sarumaj/download-mac-os/actions/workflows/generate-installer.yml)
+
+---
+
 # macOS Downloader
 
 Download any macOS Release without needing a Mac! Download in DMG, ISO, or ZIP File Format.
