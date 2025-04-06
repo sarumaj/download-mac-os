@@ -85,8 +85,20 @@ jobs:
 
           echo "Selected version: ${{ env.macos_version }} (Name: ${{ env.installer_name }}, Version: ${{ env.installer_version }})"
 
+      
+      # Cache the downloaded macOS installer
+      - name: Cache macOS Installer
+        id: cache-installer
+        uses: actions/cache@v3
+        with:
+          path: "/Applications/Install macOS ${{ env.installer_name }}.app"
+          key: macos-installer-${{ env.installer_name }}-${{ env.installer_version }}
+          restore-keys: |
+            macos-installer-${{ env.installer_name }}-${{ env.installer_version }}
+
       # Download Installer
       - name: Download macOS Installer
+        if: steps.cache-installer.outputs.cache-hit != 'true'
         run: |
           softwareupdate --fetch-full-installer --full-installer-version ${{ env.installer_version }}
 
