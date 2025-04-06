@@ -63,6 +63,29 @@ jobs:
           echo "installer_version=${string//*v/}" >> $GITHUB_ENV
           echo "installer_name=${string// v*/}" >> $GITHUB_ENV
 
+      # List Available macOS Versions and Validate Selection
+      - name: List Available macOS Versions and Validate Selection
+        id: validate_version
+        run: |
+          echo "Available macOS versions:"
+          AVAILABLE_VERSIONS=$(softwareupdate --list-full-installers)
+          echo "$AVAILABLE_VERSIONS"
+
+          VERSION_TO_CHECK="${{ env.installer_version }}"
+          echo "Checking if version $VERSION_TO_CHECK is available..."
+
+          if echo "$AVAILABLE_VERSIONS" | grep -q "$VERSION_TO_CHECK"; then
+            echo "✅ Version $VERSION_TO_CHECK is available!"
+            echo "version_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Version $VERSION_TO_CHECK is NOT available!"
+            echo "version_exists=false" >> $GITHUB_OUTPUT
+            echo "Available versions are listed above. Please select one of these versions."
+            exit 1
+          fi
+
+          echo "Selected version: ${{ env.macos_version }} (Name: ${{ env.installer_name }}, Version: ${{ env.installer_version }})"
+
       # Download Installer
       - name: Download macOS Installer
         run: |
