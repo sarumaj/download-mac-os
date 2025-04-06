@@ -42,7 +42,6 @@ env:
 jobs:
   build:
     runs-on: macos-latest
-    if: github.repository == 'sarumaj/Download-macOS'
     steps:
       - uses: actions/checkout@v4
 
