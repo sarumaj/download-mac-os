@@ -99,7 +99,7 @@ jobs:
           sleep 10
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
-          sudo mv /tmp/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}}-${{ env.installer_version }}'.dmg
+          sudo mv /tmp/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.dmg
 
       - if: github.event.inputs.file == 'iso'
         name: Generate macOS ISO Installer
@@ -112,7 +112,7 @@ jobs:
           sleep 100
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
           hdiutil convert /tmp/'${{ env.installer_name }}'.dmg -format UDTO -o ~/Desktop/'${{ env.installer_name }}'
-          mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}}-${{ env.installer_version }}'.iso
+          mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.iso
           sudo rm -fv /tmp/'${{ env.installer_name }}'.dmg
 
       - if: github.event.inputs.file == 'zip'
@@ -120,7 +120,7 @@ jobs:
         run: |
           cd /Applications
           zip -r 'Install macOS ${{ env.installer_name }}.zip' 'Install macOS ${{ env.installer_name }}.app'
-          mv -v 'Install macOS ${{ env.installer_name }}.zip' ~/Desktop/'${{ env.installer_name }}}-${{ env.installer_version }}.zip'
+          mv -v 'Install macOS ${{ env.installer_name }}.zip' ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}.zip'
 
       # Output File Size Before Upload
       - name: Output File Size
@@ -128,7 +128,7 @@ jobs:
         id: output_file_size
         run: |
           # Use $HOME instead of ~ for more reliable expansion
-          FILE_PATH="$HOME/Desktop/${{ env.installer_name }}.${{ github.event.inputs.file }}"
+          FILE_PATH="$HOME/Desktop/${{ env.installer_name }}-${{ env.installer_version }}.${{ github.event.inputs.file }}"
       
           echo "Checking file at: $FILE_PATH"
       
