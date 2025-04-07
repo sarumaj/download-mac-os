@@ -174,7 +174,7 @@ jobs:
         if: steps.artifact-upload-step.outcome == 'success'
         run: |
           echo "✅ Build completed successfully!"
-          echo "📦 Your macOS installer artifact (${{ steps.output_file_size.outputs.file_size }}) will be available at:"
+          echo "📦 Your macOS installer artifact macOS ${{ env.installer_name }} ${{ env.installer_version }} (${{ steps.output_file_size.outputs.file_size }}) will be available at:"
           echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}"
           echo ""
           echo "⏳ Artifacts are automatically deleted after 90 days."
