@@ -23,7 +23,7 @@ on:
         type: string
         description: "Custom macOS Version (format: Name vX.Y.Z, only used if 'Custom Version' is selected)"
         required: false
-        default: ""
+        default: "Name vX.Y.Z"
       file:
         type: choice
         description: "File Type"
@@ -124,7 +124,7 @@ jobs:
 
       # Output File Size Before Upload
       - name: Output File Size
-        if: steps.validate_version.outputs.version_exists == 'true'
+        if: steps.validate_version.outcome == 'success' && steps.validate_version.outputs.version_exists == 'true'
         id: output_file_size
         run: |
           # Use $HOME instead of ~ for more reliable expansion
@@ -160,22 +160,21 @@ jobs:
 
       # Upload Installer
       - name: Upload ${{ github.event.inputs.file }}
-        id: artifact-upload-step
+        id: artifact-upload
         uses: actions/upload-artifact@v4
         with:
-          name: "macOS ${{ env.installer_name }} v${{ env.installer_version }} (${{ steps.output_file_size.outputs.file_size }})"
+          name: "macOS-${{ env.installer_name }}-v${{ env.installer_version }}.${{ github.event.inputs.file }})"
           path: "/Users/runner/Desktop/${{ env.installer_name }}-${{ env.installer_version }}.${{ github.event.inputs.file }}"
           compression-level: 9 # best compression
           overwrite: true
 
-
       # Add information about accessing the artifact
       - name: Artifact Information
-        if: steps.artifact-upload-step.outcome == 'success' && steps.artifact-upload-step.outputs.artifact-id > 0
+        if: steps.artifact-upload.outcome == 'success' && steps.artifact-upload.outputs.artifact-id > 0
         run: |
           echo "✅ Build completed successfully!"
-          echo "📦 Your macOS installer artifact \"macOS ${{ env.installer_name }} v${{ env.installer_version }} (${{ steps.output_file_size.outputs.file_size }})\" will be available at:"
-          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}"
+          echo "📦 Your macOS installer artifact \"macOS-${{ env.installer_name }}-v${{ env.installer_version }}.${{ github.event.inputs.file }})\" will be available at:"
+          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.artifact-upload.outputs.artifact-id }}"
           echo ""
           echo "⏳ Artifacts are automatically deleted after 90 days."
           echo "📥 Download your artifact soon to avoid losing it."
