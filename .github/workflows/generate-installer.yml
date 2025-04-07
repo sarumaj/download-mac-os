@@ -85,20 +85,8 @@ jobs:
 
           echo "Selected version: ${{ env.macos_version }} (Name: ${{ env.installer_name }}, Version: ${{ env.installer_version }})"
 
-      
-      # Cache the downloaded macOS installer
-      - name: Cache macOS Installer
-        id: cache-installer
-        uses: actions/cache@v3
-        with:
-          path: "/Applications/Install macOS ${{ env.installer_name }}.app"
-          key: macos-installer-${{ env.installer_name }}-${{ env.installer_version }}
-          restore-keys: |
-            macos-installer-${{ env.installer_name }}-${{ env.installer_version }}
-
       # Download Installer
       - name: Download macOS Installer
-        if: steps.cache-installer.outputs.cache-hit != 'true'
         run: |
           softwareupdate --fetch-full-installer --full-installer-version ${{ env.installer_version }}
 
@@ -111,7 +99,7 @@ jobs:
           sleep 10
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
-          sudo mv /tmp/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}'.dmg
+          sudo mv /tmp/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}}-${{ env.installer_version }}'.dmg
 
       - if: github.event.inputs.file == 'iso'
         name: Generate macOS ISO Installer
@@ -124,7 +112,7 @@ jobs:
           sleep 100
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
           hdiutil convert /tmp/'${{ env.installer_name }}'.dmg -format UDTO -o ~/Desktop/'${{ env.installer_name }}'
-          mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}'.iso
+          mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}}-${{ env.installer_version }}'.iso
           sudo rm -fv /tmp/'${{ env.installer_name }}'.dmg
 
       - if: github.event.inputs.file == 'zip'
@@ -132,7 +120,7 @@ jobs:
         run: |
           cd /Applications
           zip -r 'Install macOS ${{ env.installer_name }}.zip' 'Install macOS ${{ env.installer_name }}.app'
-          mv -v 'Install macOS ${{ env.installer_name }}.zip' ~/Desktop/'${{ env.installer_name }}.zip'
+          mv -v 'Install macOS ${{ env.installer_name }}.zip' ~/Desktop/'${{ env.installer_name }}}-${{ env.installer_version }}.zip'
 
       # Output File Size Before Upload
       - name: Output File Size
@@ -157,33 +145,37 @@ jobs:
           FILE_SIZE_BYTES=$(stat -f %z "$FILE_PATH")
       
           # Convert to human-readable format
-          for unit in bytes KB MB GB TB; do
-            if [ $FILE_SIZE_BYTES -lt 1024 ]; then
-              FILE_SIZE_UNIT=$unit
-              break
-            fi
-            FILE_SIZE_BYTES=$(echo "scale=2; $FILE_SIZE_BYTES / 1024" | bc)
-          done
-          FILE_SIZE_HR=$(printf "%.2f %s" $FILE_SIZE_BYTES $FILE_SIZE_UNIT)
+          if [ $FILE_SIZE_BYTES -ge 1073741824 ]; then
+            FILE_SIZE_HR=$(echo "scale=2; $FILE_SIZE_BYTES / 1073741824" | bc)" GB"
+          elif [ $FILE_SIZE_BYTES -ge 1048576 ]; then
+            FILE_SIZE_HR=$(echo "scale=2; $FILE_SIZE_BYTES / 1048576" | bc)" MB"
+          elif [ $FILE_SIZE_BYTES -ge 1024 ]; then
+            FILE_SIZE_HR=$(echo "scale=2; $FILE_SIZE_BYTES / 1024" | bc)" KB"
+          else
+            FILE_SIZE_HR="$FILE_SIZE_BYTES bytes"
+          fi
       
           echo "⚠️ You are about to upload a file of size: $FILE_SIZE_HR"
           echo "file_size=$FILE_SIZE_HR" >> $GITHUB_OUTPUT
 
       # Upload Installer
       - name: Upload ${{ github.event.inputs.file }}
+        id: artifact-upload-step
         uses: actions/upload-artifact@v4
         with:
           name: macOS ${{ env.installer_name }} (${{ steps.output_file_size.outputs.file_size }})
           path: "$HOME/Desktop/${{ env.installer_name }}-${{ env.installer_version }}.${{ github.event.inputs.file }}"
+          compression-level: 9 # best compression
+          overwrite: true
 
 
       # Add information about accessing the artifact
       - name: Artifact Information
-        if: steps.validate_version.outputs.version_exists == 'true'
+        if: steps.artifact-upload-step.outcome == 'success'
         run: |
           echo "✅ Build completed successfully!"
           echo "📦 Your macOS installer artifact (${{ steps.output_file_size.outputs.file_size }}) will be available at:"
-          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}"
           echo ""
           echo "⏳ Artifacts are automatically deleted after 90 days."
           echo "📥 Download your artifact soon to avoid losing it."
