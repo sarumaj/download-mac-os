@@ -110,7 +110,7 @@ jobs:
       - if: github.event.inputs.file == 'dmg'
         name: Generate macOS DMG Installer
         run: |
-          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size 18000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
+          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size 17000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
           sudo hdiutil attach /Users/runner/work/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
           sleep 10
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
@@ -120,14 +120,14 @@ jobs:
       - if: github.event.inputs.file == 'iso'
         name: Generate macOS ISO Installer
         run: |
-          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size 18000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
+          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size 17000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
           sudo hdiutil attach /Users/runner/work/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
           sleep 20
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
           echo "Sleeping 100 to allow the installer to finish"
           sleep 100
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
-          hdiutil convert /Users/runner/work/'${{ env.installer_name }}'.dmg -format UDTO -o ~/Desktop/'${{ env.installer_name }}'
+          hdiutil convert /Users/runner/work/'${{ env.installer_name }}'.dmg -format UDZO -o ~/Desktop/'${{ env.installer_name }}'
           mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.iso
           sudo rm -fv /Users/runner/work/'${{ env.installer_name }}'.dmg
 
