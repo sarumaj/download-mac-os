@@ -15,9 +15,9 @@ on:
         description: "Predefined macOS Version (only used if 'Predefined Version' is selected)"
         required: false
         options:
-          - Sequoia v15.3.2
-          - Sonoma v14.7.4
-          - Ventura v13.7.4
+          - Sequoia v15.4.1
+          - Sonoma v14.7.5
+          - Ventura v13.7.5
           - Monterey v12.7.4
       custom_macos_version:
         type: string
@@ -85,6 +85,21 @@ jobs:
 
           echo "Selected version: ${{ env.macos_version }} (Name: ${{ env.installer_name }}, Version: ${{ env.installer_version }})"
 
+      
+      - name: Check available disk space
+        run: |
+          echo "=== Disk Space Overview ==="
+          df -h
+      
+          echo "\n=== Space in key directories ==="
+          echo "/ directory: $(df -h / | awk 'NR==2 {print $4}') available"
+          echo "/Users/runner/work directory: $(df -h /Users/runner/work | awk 'NR==2 {print $4}') available"
+          echo "/Users/runner directory: $(df -h /Users/runner | awk 'NR==2 {print $4}') available"
+          echo "/Users/runner/work directory: $(df -h /Users/runner/work | awk 'NR==2 {print $4}') available"
+      
+          echo "\n=== Directory sizes ==="
+          du -sh /Users/runner/work /Users/runner/work /Users/runner/Desktop
+    
       # Download Installer
       - name: Download macOS Installer
         run: |
@@ -94,26 +109,26 @@ jobs:
       - if: github.event.inputs.file == 'dmg'
         name: Generate macOS DMG Installer
         run: |
-          sudo hdiutil create -o /tmp/'${{ env.installer_name }}' -size 17000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
-          sudo hdiutil attach /tmp/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
+          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size 17000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
+          sudo hdiutil attach /Users/runner/work/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
           sleep 10
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
-          sudo mv /tmp/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.dmg
+          sudo mv /Users/runner/work/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.dmg
 
       - if: github.event.inputs.file == 'iso'
         name: Generate macOS ISO Installer
         run: |
-          sudo hdiutil create -o /tmp/'${{ env.installer_name }}' -size 17000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
-          sudo hdiutil attach /tmp/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
+          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size 17000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
+          sudo hdiutil attach /Users/runner/work/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
           sleep 20
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
           echo "Sleeping 100 to allow the installer to finish"
           sleep 100
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
-          hdiutil convert /tmp/'${{ env.installer_name }}'.dmg -format UDTO -o ~/Desktop/'${{ env.installer_name }}'
+          hdiutil convert /Users/runner/work/'${{ env.installer_name }}'.dmg -format UDTO -o ~/Desktop/'${{ env.installer_name }}'
           mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.iso
-          sudo rm -fv /tmp/'${{ env.installer_name }}'.dmg
+          sudo rm -fv /Users/runner/work/'${{ env.installer_name }}'.dmg
 
       - if: github.event.inputs.file == 'zip'
         name: Generate macOS ZIP Installer
