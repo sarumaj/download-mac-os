@@ -91,15 +91,15 @@ jobs:
           echo "=== Disk Space Overview ==="
           df -h
       
-          echo "\n\n=== Space in key directories ==="
+          echo -e "\n\n=== Space in key directories ==="
           echo "/ directory: $(df -h / | awk 'NR==2 {print $4}') available"
           echo "/Users/runner/work directory: $(df -h /Users/runner/work | awk 'NR==2 {print $4}') available"
           echo "/Users/runner directory: $(df -h /Users/runner | awk 'NR==2 {print $4}') available"
           echo "/Users/runner/work directory: $(df -h /Users/runner/work | awk 'NR==2 {print $4}') available"
           echo "/tmp: $(df -h /tmp | awk 'NR==2 {print $4}') available"
       
-          echo "\n\n=== Directory sizes ==="
-          du -sh / /Users/runner/work /Users/runner/work /Users/runner/Desktop /tmp
+          echo -e "\n\n=== Directory sizes ==="
+          du -sh /Users/runner/work /Users/runner/work /Users/runner/Desktop /tmp
     
       # Download Installer
       - name: Download macOS Installer
