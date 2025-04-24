@@ -106,28 +106,67 @@ jobs:
         run: |
           softwareupdate --fetch-full-installer --full-installer-version ${{ env.installer_version }}
 
+      # Calculate installer size and determine required space
+      - name: Calculate installer size and required space
+        run: |
+          # Get the actual installer size in bytes
+          INSTALLER_SIZE_BYTES=$(du -sk "/Applications/Install macOS ${{ env.installer_name }}.app" | awk '{print $1 * 1024}')
+
+          # Convert to MB
+          INSTALLER_SIZE_MB=$(echo "scale=0; $INSTALLER_SIZE_BYTES / 1048576" | bc)
+
+          # Add 20% buffer for safety
+          REQUIRED_SIZE_MB=$(echo "scale=0; $INSTALLER_SIZE_MB * 1.2" | bc)
+
+          # Round up to nearest 1000MB for clean number
+          ROUNDED_SIZE_MB=$(echo "scale=0; ($REQUIRED_SIZE_MB + 999) / 1000 * 1000" | bc)
+
+          # Ensure minimum size of 12000MB
+          if [ $ROUNDED_SIZE_MB -lt 12000 ]; then
+            ROUNDED_SIZE_MB=12000
+          fi
+
+          echo "Original installer size: $INSTALLER_SIZE_MB MB"
+          echo "Required size with buffer: $REQUIRED_SIZE_MB MB"
+          echo "Rounded size for hdiutil: $ROUNDED_SIZE_MB MB"
+
+          # Set the environment variable for use in later steps
+          echo "installer_size_mb=$ROUNDED_SIZE_MB" >> $GITHUB_ENV
+
+          # Check available space
+          AVAILABLE_SPACE_MB=$(df -m /Users/runner/work | awk 'NR==2 {print $4}')
+          echo "Available space in /Users/runner/work: $AVAILABLE_SPACE_MB MB"
+
+          # Check if we have enough space
+          if [ $AVAILABLE_SPACE_MB -lt $((ROUNDED_SIZE_MB * 2)) ]; then
+            echo "⚠️ WARNING: You may not have enough space for both the DMG and conversion process"
+            echo "Consider cleaning up unnecessary files before proceeding"
+          fi
+
       # Generate Installer
       - if: github.event.inputs.file == 'dmg'
         name: Generate macOS DMG Installer
         run: |
-          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size 17000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
+          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size ${{ env.installer_size_mb }}m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
           sudo hdiutil attach /Users/runner/work/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
           sleep 10
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
+          sudo rm -rf "/Applications/Install macOS ${{ env.installer_name }}.app"
           sudo mv /Users/runner/work/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.dmg
 
       - if: github.event.inputs.file == 'iso'
         name: Generate macOS ISO Installer
         run: |
-          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size 17000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
+          sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size ${{ env.installer_size_mb }}m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
           sudo hdiutil attach /Users/runner/work/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
           sleep 20
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
           echo "Sleeping 100 to allow the installer to finish"
           sleep 100
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
-          hdiutil convert /Users/runner/work/'${{ env.installer_name }}'.dmg -format UDZO -o ~/Desktop/'${{ env.installer_name }}'
+          sudo rm -rf "/Applications/Install macOS ${{ env.installer_name }}.app"
+          hdiutil convert /Users/runner/work/'${{ env.installer_name }}'.dmg -format UDZO -o ~/Desktop/'${{ env.installer_name }}'.dmg
           mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.iso
           sudo rm -fv /Users/runner/work/'${{ env.installer_name }}'.dmg
 
