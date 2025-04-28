@@ -149,12 +149,14 @@ jobs:
         run: |
           sudo hdiutil create -o /Users/runner/work/'${{ env.installer_name }}' -size ${{ env.installer_size_mb }}m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
           sudo hdiutil attach /Users/runner/work/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
-          sleep 10
+          sleep 20
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
+          echo "Sleeping 100 to allow the installer to finish"
+          sleep 100
           hdiutil eject -force /Volumes/'Install macOS ${{ env.installer_name }}'
           sudo rm -rf "/Applications/Install macOS ${{ env.installer_name }}.app"
           sudo mv /Users/runner/work/'${{ env.installer_name }}'.dmg ~/Desktop/'${{ env.installer_name }}-${{ env.installer_version }}'.dmg
-
+          
       - if: github.event.inputs.file == 'iso'
         name: Generate macOS ISO Installer
         run: |
