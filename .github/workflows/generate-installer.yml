@@ -111,32 +111,32 @@ jobs:
         run: |
           # Get the actual installer size in bytes
           INSTALLER_SIZE_BYTES=$(du -sk "/Applications/Install macOS ${{ env.installer_name }}.app" | awk '{print $1 * 1024}')
-
+      
           # Convert to MB
           INSTALLER_SIZE_MB=$(echo "scale=0; $INSTALLER_SIZE_BYTES / 1048576" | bc)
-
-          # Add 20% buffer for safety
-          REQUIRED_SIZE_MB=$(echo "scale=0; $INSTALLER_SIZE_MB * 1.2" | bc)
-
-          # Round up to nearest 1000MB for clean number
-          ROUNDED_SIZE_MB=$(echo "scale=0; ($REQUIRED_SIZE_MB + 999) / 1000 * 1000" | bc)
-
+      
+          # Add 10% buffer for safety (reduced from 20% for minimal size)
+          REQUIRED_SIZE_MB=$(echo "scale=0; $INSTALLER_SIZE_MB * 1.1" | bc)
+      
+          # Round up to nearest 10MB for precision
+          ROUNDED_SIZE_MB=$(echo "scale=0; ($REQUIRED_SIZE_MB + 9) / 10 * 10" | bc)
+      
           # Ensure minimum size of 12000MB
           if [ $ROUNDED_SIZE_MB -lt 12000 ]; then
             ROUNDED_SIZE_MB=12000
           fi
-
+      
           echo "Original installer size: $INSTALLER_SIZE_MB MB"
           echo "Required size with buffer: $REQUIRED_SIZE_MB MB"
           echo "Rounded size for hdiutil: $ROUNDED_SIZE_MB MB"
-
+      
           # Set the environment variable for use in later steps
           echo "installer_size_mb=$ROUNDED_SIZE_MB" >> $GITHUB_ENV
-
+      
           # Check available space
           AVAILABLE_SPACE_MB=$(df -m /Users/runner/work | awk 'NR==2 {print $4}')
           echo "Available space in /Users/runner/work: $AVAILABLE_SPACE_MB MB"
-
+      
           # Check if we have enough space
           if [ $AVAILABLE_SPACE_MB -lt $((ROUNDED_SIZE_MB * 2)) ]; then
             echo "⚠️ WARNING: You may not have enough space for both the DMG and conversion process"
