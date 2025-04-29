@@ -115,8 +115,8 @@ jobs:
           # Convert to MB
           INSTALLER_SIZE_MB=$(echo "scale=0; $INSTALLER_SIZE_BYTES / 1048576" | bc)
       
-          # Add 10% buffer for safety (reduced from 20% for minimal size)
-          REQUIRED_SIZE_MB=$(echo "scale=0; $INSTALLER_SIZE_MB * 1.1" | bc)
+          # Add 14% buffer for safety
+          REQUIRED_SIZE_MB=$(echo "scale=0; $INSTALLER_SIZE_MB * 1.14" | bc)
       
           # Round up to nearest 10MB for precision
           ROUNDED_SIZE_MB=$(echo "scale=0; ($REQUIRED_SIZE_MB + 9) / 10 * 10" | bc)
